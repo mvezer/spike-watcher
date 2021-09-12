@@ -1,11 +1,12 @@
+import moment from "moment";
 import OHLCV from "../entities/OHLCV";
 
 export default class OHLCVrepository implements IterableIterator<OHLCV> {
-    private data: OHLCV[]
+    private _data: OHLCV[]
 
     public next(): IteratorResult<OHLCV> {
         let pointer = this.size - 1;
-        const data = this.data;
+        const data = this._data;
     
         if (pointer >= 0) {
             return {
@@ -24,8 +25,16 @@ export default class OHLCVrepository implements IterableIterator<OHLCV> {
         return this;
     }
 
-    constructor() {
-        this.data = []
+    constructor(initData?: OHLCV[]) {
+        this._data = initData || []
+    }
+
+    private convertIndex(rawIndex: number): number {
+        if (rawIndex < 0 || rawIndex >= this.size) {
+            throw new Error('Index is out of range')
+        }
+
+        return this.size - 1 - rawIndex
     }
 
     addItemFromCSV(csv: string): OHLCV | null {
@@ -34,12 +43,12 @@ export default class OHLCVrepository implements IterableIterator<OHLCV> {
             return null
         }
 
-        this.data.push(newItem)
+        this._data.push(newItem)
         return newItem
     }
 
     get size(): number {
-        return this.data.length
+        return this._data.length
     }
 
     get first(): OHLCV | null{
@@ -47,7 +56,7 @@ export default class OHLCVrepository implements IterableIterator<OHLCV> {
             return null
         }
 
-        return this.data[this.size - 1]
+        return this._data[this.size - 1]
     }
 
     get last(): OHLCV | null{
@@ -55,13 +64,24 @@ export default class OHLCVrepository implements IterableIterator<OHLCV> {
             return null
         }
 
-        return this.data[0]
+        return this._data[0]
+    }
+
+    get data(): OHLCV[] {
+        return this._data
     }
 
     getByIndex(index: number): OHLCV {
         if (index < 0 || index >= this.size ) {
             throw new Error(`Index (${index}) is out of range`)
         }
-        return this.data[this.size - 1 - index]
+        return this._data[this.convertIndex(index)]
+    }
+
+    timeStampToIndex(timestamp: moment.Moment): number {
+        console.log(timestamp)
+        const rawIndex = this._data.findIndex((item:OHLCV) => item.timestamp.isSame(timestamp))
+        console.log(rawIndex)
+        return this.convertIndex(rawIndex)
     }
 }
